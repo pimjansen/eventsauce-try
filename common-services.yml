@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  php:
+    build:
+      context: .
+      target: local
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/app
+    networks:
+      - onderwijscatalogus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  asset-base:
+    working_dir: /app
+    security_opt:
+      - no-new-privileges:true
+    profiles:
+      - dev
+    restart: "no"
+    volumes:
+      - .:/app
+    networks:
+      - onderwijscatalogus
+
+networks:
+  onderwijscatalogus:
+    driver: bridge

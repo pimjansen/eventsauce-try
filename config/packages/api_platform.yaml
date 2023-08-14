@@ -1,0 +1,40 @@
+api_platform:
+  title: Onderwijscatalogus API
+  description: Onderwijscatalogus API
+  version: 1.0.0
+  openapi:
+    contact:
+      name: Senet Eindhoven B.V.
+      url: https://support.senet.nl
+      email: support@senet.nl
+    termsOfService: https://www.senet.nl/algemene-voorwaarden/
+    license:
+      name: GPL
+  swagger:
+    versions: [ 3 ]
+#    api_keys:
+#      apiKey:
+#        name: !php/const App\Security\Authenticator\APIAuthenticator::API_HEADER
+#        type: header
+  formats:
+    jsonld: [ 'application/ld+json' ]
+    json: [ 'application/json' ]
+    yaml: [ 'application/x-yaml' ]
+    xml: [ 'application/xml' ]
+    csv: [ 'text/csv' ]
+    html: [ 'text/html' ]
+  enable_entrypoint: true
+  enable_profiler: false
+  doctrine:
+    enabled: false
+  validator:
+    serialize_payload_fields: ~
+  defaults:
+    stateless: true
+  mapping:
+    paths:
+      - '%kernel.project_dir%/src/User/App/V1/ApiResource'
+
+when@dev:
+  api_platform:
+    enable_profiler: true

@@ -1,0 +1,86 @@
+version: '3'
+
+includes:
+  app: ./.tasks/app
+  az: ./.tasks/azure
+  composer: ./.tasks/composer
+  deps: ./.tasks/deps
+  docker: ./.tasks/docker
+  k8s: ./.tasks/k8s
+
+env:
+  TTY: ''
+  UID:
+    sh: id -u
+  GID:
+    sh: id -g
+
+vars:
+  AZURE_TENANT_NAME: "ACCICT - CSP"
+  AZURE_REGISTRY_NAME: acrsenetshared001
+  AZURE_REGISTRY_URL: acrsenetshared001.azurecr.io
+  AZURE_REPOSITORY: onderwijscatalogus/app
+
+tasks:
+  default:
+    cmds:
+      - task --list
+
+  setup:
+    desc: Setup the application
+    cmds:
+       - task: docker:down
+       - task: az:setup
+       - task: app:init
+       - task: docker:up
+       - task: app:install:dev
+
+  contribute:
+    desc: Run code style and quality tools
+    cmds:
+      - task: phpcs
+      - task: phpstan
+      - task: phpunit
+
+  phpcs:
+    desc: PHPCS dry run
+    cmds:
+      - docker compose exec $TTY -e XDEBUG_MODE=off phpfpm vendor/bin/php-cs-fixer fix --dry-run -v --diff
+
+  phpcs:fix:
+    desc: PHPCS fix
+    cmds:
+      - docker compose exec $TTY -e XDEBUG_MODE=off phpfpm vendor/bin/php-cs-fixer fix -v
+
+  phpstan:
+    desc: PHPStan run
+    cmds:
+      - docker compose exec $TTY -e XDEBUG_MODE=off phpfpm vendor/bin/phpstan --memory-limit=2G --error-format=table
+
+  phpstan:baseline:
+    desc: PHPStan update baseline
+    cmds:
+      - task docker:run c=phpfpm -- vendor/bin/phpstan --generate-baseline
+
+  test:
+    desc: Run unittests
+    cmds:
+      - task docker:run c=phpfpm -- vendor/bin/pest --cache-directory ./.build/pest {{.CLI_ARGS}}
+
+  test:ci:
+    desc: Run unittests
+    cmds:
+      - task docker:run c=phpfpm -- vendor/bin/pest --parallel --cache-directory ./.build/pest {{.CLI_ARGS}}
+
+  test:coverage:
+    desc: Run unittests
+    cmds:
+      - task docker:run c=phpfpm -- vendor/bin/pest --cache-directory ./.build/pest --parallel --coverage --coverage-clover .build/pest/clover --coverage-html .build/pest/html {{.CLI_ARGS}}
+
+  dotenv2yaml:
+    desc: Convert dotenv to YAML format
+    vars:
+      FILE: '{{.f | default ".env"}}'
+    cmds:
+      - |
+        sed -e '/^[[:blank:]]*#/d;s/#.*//' -e '/^$$/d' ./{{.FILE}} | sed -e 's/=/\: /'
